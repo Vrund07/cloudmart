@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_IMAGE: ninaad98/cloudmart-api
+  DOCKER_IMAGE: vrund07/cloudmart-api
   AZURE_RESOURCE_GROUP: Student-RG-1884883
   AZURE_CONTAINER_NAME: cloudmart-app
   AZURE_LOCATION: canadacentral
