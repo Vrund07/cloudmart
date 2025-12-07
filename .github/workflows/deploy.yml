@@ -53,7 +53,7 @@ jobs:
           az container create \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --name ${{ env.AZURE_CONTAINER_NAME }} \
-            --image ${{ env.DOCTOR_IMAGE }}:latest \
+            --image ${{ env.DOCKER_IMAGE }}:latest \
             --location ${{ env.AZURE_LOCATION }} \
             --os-type Linux \
             --cpu 1 \
