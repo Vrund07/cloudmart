@@ -10,7 +10,7 @@ env:
   AZURE_RESOURCE_GROUP: Student-RG-1884883
   AZURE_CONTAINER_GROUP: cloudmart-app
   AZURE_LOCATION: canadacentral
-  AZURE_VNET: Student-1884884-vnet
+  AZURE_VNET: Student-1884883-vnet
   AZURE_SUBNET: app-subnet
 
 jobs:
