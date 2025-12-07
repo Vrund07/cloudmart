@@ -1,4 +1,4 @@
-name: build-push-deploy
+name: CD
 
 on:
   push:
@@ -6,11 +6,12 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_IMAGE: vrund07/cloudmart-api
+  DOCKER_IMAGE: vrund07/cloudmart-api:latest
   AZURE_RESOURCE_GROUP: Student-RG-1884883
-  AZURE_CONTAINER_NAME: cloudmart-app
+  AZURE_CONTAINER_GROUP: cloudmart-app
   AZURE_LOCATION: canadacentral
-  AZURE_DNS_LABEL: cloudmart1884883
+  AZURE_VNET: Student-1884884-vnet
+  AZURE_SUBNET: app-subnet
 
 jobs:
   build-push-deploy:
@@ -27,14 +28,11 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
           push: true
-          tags: |
-            ${{ env.DOCKER_IMAGE }}:latest
-            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          tags: ${{ env.DOCKER_IMAGE }}
 
       - name: Azure login
         uses: azure/login@v2
@@ -42,32 +40,27 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Delete existing container group (if any)
+        continue-on-error: true
         run: |
           az container delete \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --name ${{ env.AZURE_CONTAINER_NAME }} \
-            --yes || true
+            --name ${{ env.AZURE_CONTAINER_GROUP }} \
+            --yes
 
-      - name: Deploy to Azure Container Instances (NO VNET)
+      - name: Deploy to Azure Container Instances
         run: |
           az container create \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-            --name ${{ env.AZURE_CONTAINER_NAME }} \
-            --image ${{ env.DOCKER_IMAGE }}:latest \
+            --name ${{ env.AZURE_CONTAINER_GROUP }} \
+            --image ${{ env.DOCKER_IMAGE }} \
             --location ${{ env.AZURE_LOCATION }} \
             --os-type Linux \
             --cpu 1 \
-            --memory 1 \
+            --memory 1.5 \
+            --restart-policy Always \
             --ports 80 \
-            --dns-name-label ${{ env.AZURE_DNS_LABEL }} \
+            --vnet ${{ env.AZURE_VNET }} \
+            --subnet ${{ env.AZURE_SUBNET }} \
             --environment-variables \
               COSMOS_ENDPOINT=${{ secrets.COSMOS_ENDPOINT }} \
               COSMOS_KEY=${{ secrets.COSMOS_KEY }}
-
-      - name: Check health endpoint
-        run: |
-          echo "Waiting for container to start..."
-          sleep 40
-          curl -v http://${{ env.AZURE_DNS_LABEL }}.${{ env.AZURE_LOCATION }}.azurecontainer.io/health || true
-EOF
-
